@@ -25,6 +25,9 @@ interface Task {
   status: TaskStatus
   error?: string
   lastCheckTime?: string
+  restaurantName?: string
+  checkoutTime?: string
+  reservationTime?: string
 }
 
 interface BookingForm {
@@ -108,9 +111,25 @@ export default function GetResydPage() {
     document.documentElement.classList.toggle("dark", newTheme === "dark")
   }
 
-  const updateTaskStatus = (taskId: string, status: TaskStatus, error?: string, lastCheckTime?: string) => {
+  const updateTaskStatus = (
+    taskId: string, 
+    status: TaskStatus, 
+    error?: string, 
+    lastCheckTime?: string,
+    restaurantName?: string,
+    checkoutTime?: string,
+    reservationTime?: string
+  ) => {
     setTasks(prev => prev.map(task => 
-      task.id === taskId ? { ...task, status, error, lastCheckTime } : task
+      task.id === taskId ? { 
+        ...task, 
+        status, 
+        error, 
+        lastCheckTime,
+        restaurantName,
+        checkoutTime,
+        reservationTime
+      } : task
     ))
   }
 
@@ -120,6 +139,25 @@ export default function GetResydPage() {
       minute: '2-digit',
       hour12: true 
     })
+  }
+
+  const formatReservationTime = (timeString: string) => {
+    // timeString is typically in format like "2025-01-15 19:00:00" or ISO format
+    try {
+      const date = new Date(timeString)
+      return formatTime(date)
+    } catch {
+      // If parsing fails, try to extract time portion
+      const match = timeString.match(/(\d{2}):(\d{2})/)
+      if (match) {
+        const hours = parseInt(match[1])
+        const minutes = match[2]
+        const period = hours >= 12 ? 'PM' : 'AM'
+        const displayHours = hours > 12 ? hours - 12 : hours === 0 ? 12 : hours
+        return `${displayHours}:${minutes} ${period}`
+      }
+      return timeString
+    }
   }
 
   const pollSlotsUntilAvailable = async (venueId: number, day: string, numSeats: number, refreshTime: number, taskName: string = "monitor", token: string | null = null) => {
@@ -408,7 +446,11 @@ export default function GetResydPage() {
       })
       
       if (!bookRes.ok) throw new Error("Failed to book reservation")
-      updateTaskStatus("book", "completed")
+      
+      // Store booking completion details
+      const checkoutTime = formatTime(new Date())
+      const reservationTime = formatReservationTime(firstSlot.start)
+      updateTaskStatus("book", "completed", undefined, undefined, venueData.venue_name, checkoutTime, reservationTime)
 
       toast({
         title: "Success!",
@@ -765,6 +807,11 @@ export default function GetResydPage() {
                           {task.status === "monitoring" && (
                             <p className="text-xs text-blue-600 mt-1">
                               Monitoring for available slots...
+                            </p>
+                          )}
+                          {task.id === "book" && task.status === "completed" && task.restaurantName && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {task.restaurantName} • Checked out at {task.checkoutTime} • Reserved for {task.reservationTime}
                             </p>
                           )}
                         </div>

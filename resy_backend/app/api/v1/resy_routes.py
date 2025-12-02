@@ -237,18 +237,33 @@ def getID(
     """
     resy_client = client_manager.get_resy_client(x_task_id)
     try:
+        print(f"[getID] Looking up venue with URL: {body.URL}")
         res_json = resy_client.lookup_venue(
             url=body.URL,
         )
-
+        print(f"[getID] Lookup successful, response keys: {list(res_json.keys())}")
+    except ValueError as e:
+        print(f"[getID] ValueError: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Invalid URL format: {str(e)}")
     except ResyClientError as e:
-        raise HTTPException(status_code=502, detail=f"Upstream error: {e.message}")
+        error_detail = f"Upstream error: {e.message}"
+        if e.details:
+            error_detail += f" | Details: {e.details}"
+        print(f"[getID] ResyClientError: {error_detail}")
+        raise HTTPException(status_code=502, detail=error_detail)
+    except Exception as e:
+        print(f"[getID] Unexpected error: {type(e).__name__}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
-    venue_id = str(res_json.get("id")["resy"])
-    venue_name = str(res_json.get("name"))
+    venue_id_obj = res_json.get("id")
+    if not venue_id_obj or not isinstance(venue_id_obj, dict):
+        raise HTTPException(status_code=500, detail="Invalid venue ID format in response")
+    
+    venue_id = str(venue_id_obj.get("resy"))
+    venue_name = str(res_json.get("name", ""))
 
     if not venue_id:
-        raise HTTPException(status_code=500, detail="No book_token returned")
+        raise HTTPException(status_code=500, detail="No venue ID returned from lookup")
 
     # Generate and return a session token
     session_token = generate_session_token(x_task_id)
