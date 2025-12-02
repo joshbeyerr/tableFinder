@@ -1,0 +1,54 @@
+IUN# run-dev.ps1
+# Launch backend (uvicorn) and frontend (next dev) in separate PowerShell windows
+# Usage: Open PowerShell at the repo root and run `.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Start-Process "http://127.0.0.1:3000"# Optional: open browser to frontend (if dev serves UI at 3000/5173)Write-Host "Both processes launched. Check the new PowerShell windows for logs." -ForegroundColor GreenWrite-Host "Started frontend window."Start-Process -FilePath powershell -ArgumentList ('-NoExit','-NoProfile','-Command',$frontendPS) | Out-Null$frontendPS = "Set-Location -LiteralPath '$FrontendDir'; $frontendCmd"# Start frontend in a new PowerShell windowWrite-Host "Started backend window."Start-Process -FilePath powershell -ArgumentList ('-NoExit','-NoProfile','-Command',$backendPS) | Out-Null$backendPS = "Set-Location -LiteralPath '$BackendDir'; $backendCmd"# Start backend in a new PowerShell window$frontendCmd = "npm run dev"$backendCmd = "& `"$python`" -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000"# Commands to run}    Write-Host "Using Python: $python"} else {    $python = 'python'    Write-Host "No venv python detected; falling back to 'python' from PATH." -ForegroundColor Yellowif (-not $python) {if (-not $python -and (Test-Path $candidate3)) { $python = $candidate3 }$candidate3 = Join-Path $RepoRoot 'py312\Scripts\python.exe'# Repo-local py312 (if present)if (-not $python -and (Test-Path $candidate2)) { $python = $candidate2 }$candidate2 = Join-Path $env:USERPROFILE 'Desktop\funCode\py312\Scripts\python.exe'# Common local path used in this workspace; adjust if yours differs}    if (Test-Path $candidate) { $python = $candidate }    $candidate = Join-Path $env:VIRTUAL_ENV 'Scripts\python.exe'if ($env:VIRTUAL_ENV) {$python = $null# Determine Python executableWrite-Host "Frontend dir: $FrontendDir"Write-Host "Backend dir: $BackendDir"Write-Host "Repo root: $RepoRoot"$FrontendDir = Join-Path $RepoRoot 'resy-frontend'$BackendDir = Join-Path $RepoRoot 'resy_backend'$RepoRoot = Split-Path -Parent $MyInvocation.MyCommand.Pathun-dev.ps1`
