@@ -1,14 +1,14 @@
 # Resy
 
-Restaurant reservation booking system built on Resy's API.
+Restaurant reservation booking system built, so far, on Resy's API with a custom backend.
 
 ## Why
 
-I was always finding myself unable to get reservations at busier restaurants throughout the city, especially last minute. This tool helps automate the booking process.
+Missing out on reservations at the hottest spots in the city sucks, especially when plans change last minute. Manual refreshing and checking doesn't cut it anymore. This automates the entire process—monitoring availability, securing slots the moment they drop, and booking them before they're gone. No more waiting around or missing opportunities.
 
 ## What It Does
 
-Browse restaurants, check availability, and book reservations through Resy. Find slots by date, preview bookings, and complete reservations.
+Two modes to match how you want to roll: monitor-only for notifications when slots open, or full auto-booking that handles everything end-to-end. The system continuously checks for availability at your chosen restaurant, handles authentication, navigates the booking flow, and secures the reservation instantly when something opens up. Real-time monitoring with configurable refresh intervals means you're always first in line. Works with any restaurant on Resy.
 
 ## Screenshots
 
@@ -59,6 +59,5 @@ If you're cloning and using this project, make sure to set your backend `.env` `
 
 ## Future Plans
 
-- Integrate OpenTable API
-- ExploreTok integration for restaurant discovery
+OpenTable support is already built out in the backend—just needs frontend integration. If there's enough interest, that's next. Also exploring ExploreTok integration for better restaurant discovery. The goal is expanding to cover all major booking platforms so you can get into any place you want, regardless of where they're listed.
 
