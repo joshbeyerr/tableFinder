@@ -4,11 +4,11 @@ Restaurant reservation booking system built, so far, on Resy's API with a custom
 
 ## Why
 
-Missing out on reservations at the hottest spots in the city sucks, especially when plans change last minute. Manual refreshing and checking doesn't cut it anymore. This automates the entire process—monitoring availability, securing slots the moment they drop, and booking them before they're gone. No more waiting around or missing opportunities.
+I kept running into the same problem: couldn't get reservations at busy restaurants around the city, especially when trying to book last minute. Manual checking wasn't working, so I built this to automate it. Now it monitors for availability and books slots automatically when they open up. (I have actually succesfully secured multiple last minute reservations for myself and friends. This comes in very handy when you need)
 
 ## What It Does
 
-Two modes to match how you want to roll: monitor-only for notifications when slots open, or full auto-booking that handles everything end-to-end. The system continuously checks for availability at your chosen restaurant, handles authentication, navigates the booking flow, and secures the reservation instantly when something opens up. Real-time monitoring with configurable refresh intervals means you're always first in line. Works with any restaurant on Resy.
+Two modes to match how you want to roll: monitor-only for notifications when slots open, or full auto-booking that handles everything end to end. The system continuously checks for availability at your chosen restaurant, handles authentication, navigates the booking flow, and secures the reservation instantly when something opens up. Real-time monitoring with configurable refresh intervals means you're always first in line. Works with any restaurant on Resy.
 
 ## Screenshots
 
@@ -59,5 +59,5 @@ If you're cloning and using this project, make sure to set your backend `.env` `
 
 ## Future Plans
 
-OpenTable support is already built out in the backend—just needs frontend integration. If there's enough interest, that's next. Also exploring ExploreTok integration for better restaurant discovery. The goal is expanding to cover all major booking platforms so you can get into any place you want, regardless of where they're listed.
+OpenTable support is already built out in the backend, just needs frontend integration. If there's enough interest, that's next. Also exploring ExploreTok integration for better restaurant discovery. The goal is expanding to cover all major booking platforms so you can get into any place you want, regardless of where they're listed.
 
