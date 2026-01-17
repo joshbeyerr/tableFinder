@@ -10,6 +10,14 @@ I kept running into the same problem: couldn't get reservations at busy restaura
 
 Two modes to match how you want to roll: monitor-only for notifications when slots open, or full auto-booking that handles everything end to end. The system continuously checks for availability at your chosen restaurant, handles authentication, navigates the booking flow, and secures the reservation instantly when something opens up. Real-time monitoring with configurable refresh intervals means you're always first in line. Works with any restaurant on Resy.
 
+## Run app
+
+For backend:
+uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+
+For frontend:
+npm run dev
+
 ## Screenshots
 
 Backend API screens:

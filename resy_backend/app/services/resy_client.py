@@ -186,16 +186,23 @@ class ResyClient:
             raise ResyClientError("Login did not return an auth token", details={"response": data})
 
     
-    def setToken(self) -> None:
+    def setToken(self, token: Optional[str] = None) -> None:
         """
         Set the authorization token for the client.
+        If token is provided, use it directly. Otherwise, use self.userAuth.
         """
-        if not self.userAuth:
-            raise ResyClientError("Authorization token not set. Please login first to obtain a token.")
+        auth_token = token if token is not None else self.userAuth
+        
+        if not auth_token:
+            raise ResyClientError("Authorization token not set. Please login first to obtain a token or provide a token.")
+
+        # Store the token in userAuth for consistency
+        if token is not None:
+            self.userAuth = token
 
         self.session.headers.update({
-            "x-resy-auth-token": "" + self.userAuth,
-            "x-resy-universal-auth": "" + self.userAuth,
+            "x-resy-auth-token": "" + auth_token,
+            "x-resy-universal-auth": "" + auth_token,
         })
 
     def setCookie(self, dic: dict) -> None:
@@ -264,4 +271,42 @@ class ResyClient:
 
         url = "https://api.resy.com/2/user"
         resp = self._request("GET", url)
+        return resp.json()
+
+    def venue_search(
+        self,
+        latitude: float,
+        longitude: float,
+        query: str,
+        day: Optional[str] = None,
+        party_size: Optional[int] = None,
+        per_page: int = 5
+    ) -> Dict[str, Any]:
+        """
+        POST /3/venuesearch/search
+        Search for venues by location and query.
+        
+        Args:
+            latitude: Latitude coordinate
+            longitude: Longitude coordinate
+            query: Search query string
+            day: Optional date filter (YYYY-MM-DD format)
+            party_size: Optional party size for slot filtering
+            per_page: Number of results per page (default 5)
+        
+        Returns the search response JSON.
+        """
+        url = "https://api.resy.com/3/venuesearch/search"
+        
+        payload = {"geo":{"latitude":latitude,"longitude":longitude},"highlight":{"pre_tag":"<b>","post_tag":"</b>"},"per_page":5,"query":query,"slot_filter":{"day":"2025-12-14","party_size":2},"types":["venue","cuisine"]}
+        # Add slot filter if day is provided
+        # if day:
+        #     slot_filter: Dict[str, Any] = {
+        #         "day": day
+        #     }
+        #     if party_size:
+        #         slot_filter["party_size"] = party_size
+        #     payload["slot_filter"] = slot_filter
+        
+        resp = self._request("POST", url, json=payload)
         return resp.json()

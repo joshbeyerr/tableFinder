@@ -25,5 +25,8 @@ class Settings(BaseSettings):
     
     # JWT token secret (should be a long random string in production)
     JWT_SECRET_KEY: str = "your-super-secret-jwt-key-change-in-production"
+    
+    # CORS origins (comma-separated list, or "*" for all)
+    CORS_ORIGINS: str = "http://localhost:3000,http://localhost:5173,http://127.0.0.1:5173"
 
 settings = Settings()

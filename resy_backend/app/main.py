@@ -6,6 +6,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from app.api.v1.resy_routes import router as resy_router
 from app.core.logging import RequestLoggingMiddleware
+from app.core.config import settings
 from app.services.clientManager import ClientManager
 
 # Initialize client manager singleton
@@ -36,14 +37,14 @@ app = FastAPI(title="Resy Backend API", lifespan=lifespan)
 # Add request logging middleware (should be after error handlers but before other middleware)
 # app.add_middleware(RequestLoggingMiddleware)
 
-# CORS so your React app (localhost:5173 etc.) can call this
+# CORS configuration - supports development and production
+# Parse CORS origins from environment variable
+cors_origins = settings.CORS_ORIGINS.split(",") if settings.CORS_ORIGINS != "*" else ["*"]
+cors_origins = [origin.strip() for origin in cors_origins]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-    ],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

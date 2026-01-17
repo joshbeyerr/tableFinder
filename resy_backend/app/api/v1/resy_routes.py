@@ -69,8 +69,9 @@ class IdResponse(BaseModel):
     session_token: str
 
 class LoginRequest(BaseModel):
-    email: str
-    password: str
+    email: Optional[str] = None
+    password: Optional[str] = None
+    resy_token: Optional[str] = None  # Token obtained from client-side authentication
 
 class LoginResponse(BaseModel):
     status: str
@@ -88,6 +89,25 @@ class calendarRequest(BaseModel):
 
 class calendarResponse(BaseModel):
     dates: List[str]
+
+class VenueSearchRequest(BaseModel):
+    latitude: float
+    longitude: float
+    query: str
+    day: Optional[str] = None  # "YYYY-MM-DD" format
+    party_size: Optional[int] = None
+    per_page: int = 5
+
+class VenueSearchResult(BaseModel):
+    name: str
+    cuisine: Optional[str] = None
+    neighborhood: Optional[str] = None
+    region: Optional[str] = None
+    image_url: Optional[str] = None
+    venue_id: int
+
+class VenueSearchResponse(BaseModel):
+    results: List[VenueSearchResult]
 
 # ---------- Routes ----------
 
@@ -286,15 +306,27 @@ def login(
     x_task_id: str = Header(..., alias="x-task-id")
 ):
     """
-    Log in to Resy with email + password and store the auth token
-    on the task-specific resy_client session.
+    Log in to Resy with either:
+    1. Email + password (legacy, for backwards compatibility)
+    2. Resy auth token (preferred - obtained from client-side authentication)
+    
+    Stores the auth token on the task-specific resy_client session.
     Returns a session token for protected API calls.
     """
     resy_client = client_manager.get_resy_client(x_task_id)
     try:
-        # Use the ResyClient methods you already have
-        resy_client.login(email=body.email, password=body.password)
-        resy_client.setToken()
+        # Preferred: Use token from client-side authentication
+        if body.resy_token:
+            resy_client.setToken(token=body.resy_token)
+        # Legacy: Use email/password (for backwards compatibility)
+        elif body.email and body.password:
+            resy_client.login(email=body.email, password=body.password)
+            resy_client.setToken()
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail="Either resy_token or (email and password) must be provided",
+            )
     except ResyClientError as e:
         # Bubble up a clean error to the client
         raise HTTPException(
@@ -369,3 +401,64 @@ def calendar(
     return calendarResponse(
         dates=available_dates,
     )
+
+
+@router.post(
+    "/venuesearch",
+    response_model=VenueSearchResponse,
+    dependencies=[Depends(rate_limiter)],
+)
+def venue_search(
+    body: VenueSearchRequest,
+    x_task_id: str = Header(..., alias="x-task-id")
+):
+    """
+    Search for venues by location and query string.
+    Returns venues matching the search criteria with availability filtering if day/party_size provided.
+    """
+    resy_client = client_manager.get_resy_client(x_task_id)
+    try:
+        res_json = resy_client.venue_search(
+            latitude=body.latitude,
+            longitude=body.longitude,
+            query=body.query,
+            day=body.day,
+            party_size=body.party_size,
+            per_page=body.per_page,
+        )
+    except ResyClientError as e:
+        raise HTTPException(status_code=502, detail=f"Upstream error: {e.message}")
+
+    # Parse the response and extract venue information
+    results: List[VenueSearchResult] = []
+    
+    # The response structure may vary, but typically has a 'results' or 'hits' key
+    hits = res_json.get("search").get("hits")
+    
+    for hit in hits:
+
+        # Get venue ID - could be in different places
+        venue_id = hit.get("id")['resy'] if hit.get("id") else None
+        
+        if not venue_id:
+            continue  # Skip if no venue ID found
+        
+        # Extract other fields
+        name = hit.get("name", "")
+        cuisine = hit.get("cuisine")[0]
+        neighborhood = hit.get("neighborhood")
+        region = hit.get("region")
+        image_url = hit.get("images")[0]
+
+        results.append(
+            VenueSearchResult(
+                name=name,
+                cuisine=cuisine,
+                neighborhood=neighborhood,
+                region=region,
+                image_url=image_url,
+                venue_id=int(venue_id),
+            )
+        )
+    
+    return VenueSearchResponse(results=results)
