@@ -30,6 +30,8 @@ interface BookingForm {
   resyUrl: string
   partySize: string
   date: string
+  timeStart: string
+  timeEnd: string
   refreshTime: string
   notificationMethod: "email" | "sms"
   notificationContact: string
@@ -64,6 +66,8 @@ export function BookingPage({ selectedVenue, taskId, onBack, onPageModeChange }:
     resyUrl: selectedVenue.resyUrl || "",
     partySize: "2",
     date: "",
+    timeStart: "",
+    timeEnd: "",
     refreshTime: "5",
     notificationMethod: "email",
     notificationContact: ""
@@ -176,7 +180,9 @@ export function BookingPage({ selectedVenue, taskId, onBack, onPageModeChange }:
           body: JSON.stringify({
             venue_id: venueId,
             day: day,
-            num_seats: numSeats
+            num_seats: numSeats,
+            time_start: form.timeStart || undefined,
+            time_end: form.timeEnd || undefined,
           })
         })
 
@@ -449,7 +455,9 @@ export function BookingPage({ selectedVenue, taskId, onBack, onPageModeChange }:
         body: JSON.stringify({
           venue_id: venueId,
           day: form.date,
-          num_seats: parseInt(form.partySize)
+          num_seats: parseInt(form.partySize),
+          time_start: form.timeStart || undefined,
+          time_end: form.timeEnd || undefined,
         })
       })
       
@@ -843,6 +851,32 @@ export function BookingPage({ selectedVenue, taskId, onBack, onPageModeChange }:
                 />
               </div>
             </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="timeStart" className="text-sm font-medium">Earliest Time (optional)</Label>
+                <Input
+                  id="timeStart"
+                  type="time"
+                  value={form.timeStart}
+                  onChange={(e) => setForm({...form, timeStart: e.target.value})}
+                  className="mt-1 border-blue-600 focus:ring-blue-600"
+                />
+              </div>
+              <div>
+                <Label htmlFor="timeEnd" className="text-sm font-medium">Latest Time (optional)</Label>
+                <Input
+                  id="timeEnd"
+                  type="time"
+                  value={form.timeEnd}
+                  onChange={(e) => setForm({...form, timeEnd: e.target.value})}
+                  className="mt-1 border-blue-600 focus:ring-blue-600"
+                />
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground -mt-2">
+              If set, we’ll only proceed when available slots fall within this time window. Otherwise, it keeps monitoring.
+            </p>
 
             <div>
               <Label htmlFor="refreshTime" className="text-sm font-medium">
