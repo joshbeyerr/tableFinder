@@ -431,24 +431,29 @@ def venue_search(
 
     # Parse the response and extract venue information
     results: List[VenueSearchResult] = []
-    
-    # The response structure may vary, but typically has a 'results' or 'hits' key
-    hits = res_json.get("search").get("hits")
-    
+
+    # The response structure may vary; be defensive (Resy sometimes returns nulls)
+    search = res_json.get("search") or {}
+    hits = search.get("hits") or []
+
     for hit in hits:
+        if not isinstance(hit, dict):
+            continue
 
         # Get venue ID - could be in different places
-        venue_id = hit.get("id")['resy'] if hit.get("id") else None
+        venue_id = hit.get("id", {}).get("resy") if isinstance(hit.get("id"), dict) else None
         
         if not venue_id:
             continue  # Skip if no venue ID found
         
         # Extract other fields
         name = hit.get("name", "")
-        cuisine = hit.get("cuisine")[0]
+        cuisine_list = hit.get("cuisine") or []
+        cuisine = cuisine_list[0] if isinstance(cuisine_list, list) and cuisine_list else None
         neighborhood = hit.get("neighborhood")
         region = hit.get("region")
-        image_url = hit.get("images")[0]
+        images_list = hit.get("images") or []
+        image_url = images_list[0] if isinstance(images_list, list) and images_list else None
 
         results.append(
             VenueSearchResult(
