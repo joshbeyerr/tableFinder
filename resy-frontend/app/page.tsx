@@ -69,19 +69,11 @@ export default function GetResydPage() {
     setMounted(true)
     setTaskId(`task-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`)
     
-    // Load and set theme from localStorage or system preference
+    // Default to LIGHT on first load. Only use dark if the user explicitly saved it.
     const savedTheme = localStorage.getItem('theme') as Theme | null
-    const isDarkInDOM = document.documentElement.classList.contains('dark')
     
     let initialTheme: Theme = 'light'
-    if (savedTheme) {
-      initialTheme = savedTheme
-    } else if (isDarkInDOM) {
-      initialTheme = 'dark'
-    } else {
-      const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-      initialTheme = systemPrefersDark ? 'dark' : 'light'
-    }
+    if (savedTheme === 'dark') initialTheme = 'dark'
     
     setTheme(initialTheme)
     document.documentElement.classList.toggle("dark", initialTheme === "dark")
