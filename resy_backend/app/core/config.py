@@ -29,4 +29,9 @@ class Settings(BaseSettings):
     # CORS origins (comma-separated list, or "*" for all)
     CORS_ORIGINS: str = "http://localhost:3000,http://localhost:5173,http://127.0.0.1:5173"
 
+    # Venue search geo override (useful when server-side geo/IP is wrong)
+    # Example (Toronto): VENUESEARCH_OVERRIDE_LATITUDE=43.6532, VENUESEARCH_OVERRIDE_LONGITUDE=-79.3832
+    VENUESEARCH_OVERRIDE_LATITUDE: float | None = None
+    VENUESEARCH_OVERRIDE_LONGITUDE: float | None = None
+
 settings = Settings()

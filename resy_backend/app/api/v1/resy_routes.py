@@ -416,11 +416,16 @@ def venue_search(
     Search for venues by location and query string.
     Returns venues matching the search criteria with availability filtering if day/party_size provided.
     """
+    # City is effectively determined by geo coordinates in the upstream Resy API.
+    # Allow a simple server-side override via env vars (useful for forcing Toronto, etc.).
+    latitude = settings.VENUESEARCH_OVERRIDE_LATITUDE if settings.VENUESEARCH_OVERRIDE_LATITUDE is not None else body.latitude
+    longitude = settings.VENUESEARCH_OVERRIDE_LONGITUDE if settings.VENUESEARCH_OVERRIDE_LONGITUDE is not None else body.longitude
+
     resy_client = client_manager.get_resy_client(x_task_id)
     try:
         res_json = resy_client.venue_search(
-            latitude=body.latitude,
-            longitude=body.longitude,
+            latitude=latitude,
+            longitude=longitude,
             query=body.query,
             day=body.day,
             party_size=body.party_size,

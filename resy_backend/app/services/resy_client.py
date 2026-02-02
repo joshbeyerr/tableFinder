@@ -298,15 +298,20 @@ class ResyClient:
         """
         url = "https://api.resy.com/3/venuesearch/search"
         
-        payload = {"geo":{"latitude":latitude,"longitude":longitude},"highlight":{"pre_tag":"<b>","post_tag":"</b>"},"per_page":5,"query":query,"slot_filter":{"day":"2025-12-14","party_size":2},"types":["venue","cuisine"]}
-        # Add slot filter if day is provided
-        # if day:
-        #     slot_filter: Dict[str, Any] = {
-        #         "day": day
-        #     }
-        #     if party_size:
-        #         slot_filter["party_size"] = party_size
-        #     payload["slot_filter"] = slot_filter
+        payload: Dict[str, Any] = {
+            "geo": {"latitude": latitude, "longitude": longitude},
+            "highlight": {"pre_tag": "<b>", "post_tag": "</b>"},
+            "per_page": per_page,
+            "query": query,
+            "types": ["venue", "cuisine"],
+        }
+
+        # Optional slot filter (only include if the caller provided it)
+        if day:
+            slot_filter: Dict[str, Any] = {"day": day}
+            if party_size:
+                slot_filter["party_size"] = party_size
+            payload["slot_filter"] = slot_filter
         
         resp = self._request("POST", url, json=payload)
         return resp.json()
