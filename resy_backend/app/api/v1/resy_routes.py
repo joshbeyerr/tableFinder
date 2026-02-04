@@ -421,7 +421,7 @@ def login(
 )
 def get_me(x_task_id: str = Header(..., alias="x-task-id")):
     """
-    Return the current logged-in Resy user.
+    Return the current logged-in Resy user. This is only available if the user is logged in.
     Requires that /login has already been called successfully so
     resy_client has an auth token set.
     """
