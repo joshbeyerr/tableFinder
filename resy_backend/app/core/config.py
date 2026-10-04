@@ -34,4 +34,20 @@ class Settings(BaseSettings):
     VENUESEARCH_OVERRIDE_LATITUDE: float | None = None
     VENUESEARCH_OVERRIDE_LONGITUDE: float | None = None
 
+    # Persistent storage for monitor jobs. On Railway, mount a volume at /data
+    # and set DB_PATH=/data/monitors.db so jobs survive redeploys.
+    DB_PATH: str = "data/monitors.db"
+
+    # Email (Resend, https://resend.com). Without a verified domain Resend only
+    # delivers to the account owner's address; set EMAIL_FROM to an address on
+    # your verified domain to email anyone.
+    RESEND_API_KEY: str | None = None
+    EMAIL_FROM: str = "Table Finder <onboarding@resend.dev>"
+
+    # Monitor limits
+    MONITOR_TICK_SEC: int = 5               # how often the scheduler looks for due monitors
+    MONITOR_MIN_INTERVAL_SEC: int = 15      # floor on per-monitor check interval
+    MONITOR_MAX_ACTIVE_PER_OWNER: int = 3
+    MONITOR_MAX_AGE_HOURS: int = 72
+
 settings = Settings()

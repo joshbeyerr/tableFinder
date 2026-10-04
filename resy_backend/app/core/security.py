@@ -14,9 +14,6 @@ def get_api_key(request: Request) -> str:
     """
     api_key = request.headers.get("x-api-key")
 
-    # dev test
-    api_key = "super-secret-dev-key"
-
     if not api_key or api_key != settings.API_KEY:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

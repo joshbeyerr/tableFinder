@@ -9,7 +9,8 @@ from app.services.clientManager import ClientManager
 from app.services.resy_client import ResyClientError
 from app.core.token_manager import generate_session_token, validate_session_token
 
-from app.core.config import settings    
+from app.core.config import settings
+from app.services.slots import parse_slots, filter_slots_by_time
 
 router = APIRouter(prefix="/resy", tags=["resy"])
 
@@ -136,98 +137,8 @@ def get_slots(
     except ResyClientError as e:
         raise HTTPException(status_code=502, detail=f"Upstream error: {e.message}")
 
-    venues = resp.get("results", {}).get("venues", [])
-    if not venues:
-        return SlotsResponse(
-            venue_id=query.venue_id,
-            day=query.day,
-            num_seats=query.num_seats,
-            slots=[]
-        )
-
-    venue = venues[0]
-    slots_out: List[SlotOut] = []
-
-    for s in venue.get("slots", []):
-        cfg = s.get("config", {})
-        date = s.get("date", {})
-        payment = s.get("payment", {})
-
-        slots_out.append(
-            SlotOut(
-                token=cfg.get("token"),
-                type=cfg.get("type"),
-                start=date.get("start"),
-                end=date.get("end"),
-                is_paid=bool(payment.get("is_paid")),
-            )
-        )
-
-    # Optional time-range filtering (keeps monitoring if nothing matches).
-    # We compare against the time-of-day of the slot's "start" value.
-    def _parse_hhmm(v: Optional[str]) -> Optional[time]:
-        if not v:
-            return None
-        try:
-            hh, mm = v.split(":")
-            return time(hour=int(hh), minute=int(mm))
-        except Exception:
-            return None
-
-    def _extract_slot_time(slot_start: Optional[str]) -> Optional[time]:
-        if not slot_start:
-            return None
-        # Try ISO first (handle trailing Z)
-        try:
-            s = slot_start.replace("Z", "+00:00")
-            dt = datetime.fromisoformat(s)
-            return dt.timetz().replace(tzinfo=None)
-        except Exception:
-            pass
-        # Fallback: grab HH:MM anywhere in string
-        try:
-            import re
-            m = re.search(r"(\d{2}):(\d{2})", slot_start)
-            if not m:
-                return None
-            return time(hour=int(m.group(1)), minute=int(m.group(2)))
-        except Exception:
-            return None
-
-    start_t = _parse_hhmm(query.time_start)
-    end_t = _parse_hhmm(query.time_end)
-
-    if start_t or end_t:
-        filtered: List[SlotOut] = []
-        for slot in slots_out:
-            slot_t = _extract_slot_time(slot.start)
-            if slot_t is None:
-                continue
-
-            # Only start bound
-            if start_t and not end_t:
-                if slot_t >= start_t:
-                    filtered.append(slot)
-                continue
-
-            # Only end bound
-            if end_t and not start_t:
-                if slot_t <= end_t:
-                    filtered.append(slot)
-                continue
-
-            # Both bounds
-            assert start_t and end_t
-            if start_t <= end_t:
-                # normal same-day window
-                if start_t <= slot_t <= end_t:
-                    filtered.append(slot)
-            else:
-                # window crosses midnight (e.g. 22:00 -> 02:00)
-                if slot_t >= start_t or slot_t <= end_t:
-                    filtered.append(slot)
-
-        slots_out = filtered
+    slots = filter_slots_by_time(parse_slots(resp), query.time_start, query.time_end)
+    slots_out = [SlotOut(**s) for s in slots]
 
     return SlotsResponse(
         venue_id=query.venue_id,

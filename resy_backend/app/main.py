@@ -5,6 +5,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from app.api.v1.resy_routes import router as resy_router
+from app.api.v1.monitor_routes import router as monitor_router
+from app.services.monitor_service import run_due_monitors, cleanup_finished
 from app.core.logging import RequestLoggingMiddleware
 from app.core.config import settings
 from app.services.clientManager import ClientManager
@@ -25,6 +27,22 @@ async def lifespan(app: FastAPI):
         "interval",
         minutes=5,  # Run cleanup every 5 minutes
         id="cleanup_old_clients",
+        replace_existing=True,
+    )
+    scheduler.add_job(
+        run_due_monitors,
+        "interval",
+        seconds=settings.MONITOR_TICK_SEC,
+        id="run_due_monitors",
+        replace_existing=True,
+        max_instances=1,  # never overlap ticks
+        coalesce=True,
+    )
+    scheduler.add_job(
+        cleanup_finished,
+        "interval",
+        hours=6,
+        id="cleanup_finished_monitors",
         replace_existing=True,
     )
     yield
@@ -51,6 +69,7 @@ app.add_middleware(
 )
 
 app.include_router(resy_router, prefix="/api/v1")
+app.include_router(monitor_router, prefix="/api/v1")
 
 
 @app.get("/")

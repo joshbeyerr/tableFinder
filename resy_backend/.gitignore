@@ -40,3 +40,7 @@ build/
 .coverage
 htmlcov/
 
+
+# Monitor DB
+data/
+*.db

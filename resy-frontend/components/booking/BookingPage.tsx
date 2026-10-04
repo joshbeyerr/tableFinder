@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Play, CheckCircle2, Loader2, XCircle, Clock, Bell } from 'lucide-react'
 import { useToast } from "@/hooks/use-toast"
+import { MONITORS_CHANGED_EVENT } from "@/components/monitors/MonitorsPanel"
 
 type BookingMode = "monitor" | "full"
 type PageMode = "form" | "how-it-works" | "about-us"
@@ -68,7 +69,7 @@ export function BookingPage({ selectedVenue, taskId, onBack, onPageModeChange }:
     date: "",
     timeStart: "",
     timeEnd: "",
-    refreshTime: "5",
+    refreshTime: "30",
     notificationMethod: "email",
     notificationContact: ""
   })
@@ -229,7 +230,7 @@ export function BookingPage({ selectedVenue, taskId, onBack, onPageModeChange }:
       })
       return
     }
-    
+
     if (!taskId) {
       toast({
         title: "Initializing",
@@ -240,74 +241,73 @@ export function BookingPage({ selectedVenue, taskId, onBack, onPageModeChange }:
     }
 
     setIsRunning(true)
-    isRunningRef.current = true
-    
-    const initialTasks: Task[] = [
-      { id: "venue", name: "Getting venue information", status: "pending" },
-      { id: "monitor", name: "Monitoring for available slots", status: "pending" },
-    ]
-    setTasks(initialTasks)
 
     try {
       let venueId: number
       let venueName: string
 
       if (selectedVenue.venueId) {
-        // Use venueId from search
         venueId = parseInt(selectedVenue.venueId)
         venueName = selectedVenue.venueName
-        updateTaskStatus("venue", "completed")
       } else {
-        // Get venue ID from URL
-        updateTaskStatus("venue", "in-progress")
         const venueRes = await fetch("/api/resy/venue", {
           method: "POST",
-          headers: { 
+          headers: {
             "Content-Type": "application/json",
-            "x-task-id": taskId 
+            "x-task-id": taskId
           },
           body: JSON.stringify({ url: form.resyUrl })
         })
-        
+
         if (!venueRes.ok) throw new Error("Failed to get venue information")
         const venueData = await venueRes.json()
         venueId = venueData.venue_id
         venueName = venueData.venue_name
-        if (venueData.session_token) {
-          setSessionToken(venueData.session_token)
-        }
-        updateTaskStatus("venue", "completed")
       }
 
-      const currentToken = sessionToken
-      await pollSlotsUntilAvailable(
-        venueId,
-        form.date,
-        parseInt(form.partySize),
-        parseInt(form.refreshTime),
-        "monitor",
-        currentToken
-      )
+      // The server runs the monitor and emails the user, so it keeps going
+      // even if this tab is closed.
+      const res = await fetch("/api/resy/monitors", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-task-id": taskId
+        },
+        body: JSON.stringify({
+          venue_id: venueId,
+          venue_name: venueName,
+          day: form.date,
+          num_seats: parseInt(form.partySize),
+          time_start: form.timeStart || undefined,
+          time_end: form.timeEnd || undefined,
+          email: form.notificationContact,
+          interval_sec: parseInt(form.refreshTime) || 30,
+        })
+      })
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        const detail = Array.isArray(err.detail)
+          ? err.detail.map((d: any) => d.msg).join(", ")
+          : err.detail || err.error
+        throw new Error(detail || "Failed to start monitor")
+      }
 
       toast({
-        title: "Monitoring Complete",
-        description: "You will be notified when slots become available.",
+        title: "Monitor started",
+        description: `We'll email ${form.notificationContact} if a table opens. You can close this tab.`,
       })
+      window.dispatchEvent(new Event(MONITORS_CHANGED_EVENT))
+      onBack()
     } catch (error: any) {
       console.error("[Monitor] Error:", error)
-      const currentTask = tasks.find(t => t.status === "in-progress" || t.status === "monitoring")
-      if (currentTask) {
-        updateTaskStatus(currentTask.id, "error", error.message)
-      }
       toast({
-        title: "Monitoring Failed",
-        description: error.message || "An error occurred while monitoring",
+        title: "Couldn't start monitor",
+        description: error.message || "An error occurred",
         variant: "destructive",
       })
     } finally {
       setIsRunning(false)
-      isRunningRef.current = false
-      setIsMonitoring(false)
     }
   }
 
@@ -788,7 +788,7 @@ export function BookingPage({ selectedVenue, taskId, onBack, onPageModeChange }:
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="email">Email</SelectItem>
-                      <SelectItem value="sms">Text Message</SelectItem>
+                      <SelectItem value="sms" disabled>Text Message (coming soon)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -885,15 +885,15 @@ export function BookingPage({ selectedVenue, taskId, onBack, onPageModeChange }:
               <Input
                 id="refreshTime"
                 type="number"
-                min="1"
-                max="60"
+                min={bookingMode === "monitor" ? "15" : "1"}
+                max="300"
                 value={form.refreshTime}
                 onChange={(e) => setForm({...form, refreshTime: e.target.value})}
                 className="mt-1 border-blue-600 focus:ring-blue-600"
                 required
               />
               <p className="text-xs text-muted-foreground mt-1">
-                How often to check for availability
+                How often to check for availability{bookingMode === "monitor" ? " (minimum 15s)" : ""}
               </p>
             </div>
 

@@ -6,6 +6,7 @@ import { MainCard } from "@/components/shared/MainCard"
 import { MainHeader } from "@/components/shared/MainHeader"
 import { SearchPage } from "@/components/search/SearchPage"
 import { BookingPage } from "@/components/booking/BookingPage"
+import { MonitorsPanel } from "@/components/monitors/MonitorsPanel"
 import type { VenueSearchResult } from "@/components/search/VenueSearchInput"
 
 type PageMode = "form" | "how-it-works" | "about-us"
@@ -67,7 +68,14 @@ export default function GetResydPage() {
   // Initialize after mount to avoid hydration mismatches
   useEffect(() => {
     setMounted(true)
-    setTaskId(`task-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`)
+    // Stable per-browser id: this is how monitor jobs are tied to a visitor (no login).
+    let id: string | null = null
+    try { id = localStorage.getItem('resy_client_id') } catch {}
+    if (!id) {
+      id = crypto.randomUUID()
+      try { localStorage.setItem('resy_client_id', id) } catch {}
+    }
+    setTaskId(id)
     
     // Default to LIGHT on first load. Only use dark if the user explicitly saved it.
     const savedTheme = localStorage.getItem('theme') as Theme | null
@@ -142,6 +150,8 @@ export default function GetResydPage() {
             />
           ) : null}
         </MainCard>
+
+        <MonitorsPanel taskId={taskId} />
 
         <div className="shrink-0">
           <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
