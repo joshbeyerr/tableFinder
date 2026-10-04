@@ -51,7 +51,7 @@ interface BookingPageProps {
 }
 
 export function BookingPage({ selectedVenue, taskId, pageMode, onBack, onPageModeChange }: BookingPageProps) {
-  const [bookingMode, setBookingMode] = useState<BookingMode>("full")
+  const [bookingMode, setBookingMode] = useState<BookingMode>("monitor")
   const [tasks, setTasks] = useState<Task[]>([])
   const [isRunning, setIsRunning] = useState(false)
   const [isMonitoring, setIsMonitoring] = useState(false)
