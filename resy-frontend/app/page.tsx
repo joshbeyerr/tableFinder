@@ -44,6 +44,7 @@ function BookingPageWrapper({
       <BookingPage
         selectedVenue={selectedVenue}
         taskId={taskId}
+        pageMode={pageMode}
         onBack={onBack}
         onPageModeChange={setPageMode}
       />

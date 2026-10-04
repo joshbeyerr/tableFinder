@@ -45,12 +45,12 @@ interface BookingPageProps {
     resyUrl?: string
   }
   taskId: string
+  pageMode: PageMode
   onBack: () => void
-  onPageModeChange?: (mode: PageMode) => void
+  onPageModeChange: (mode: PageMode) => void
 }
 
-export function BookingPage({ selectedVenue, taskId, onBack, onPageModeChange }: BookingPageProps) {
-  const [pageMode, setPageMode] = useState<PageMode>("form")
+export function BookingPage({ selectedVenue, taskId, pageMode, onBack, onPageModeChange }: BookingPageProps) {
   const [bookingMode, setBookingMode] = useState<BookingMode>("full")
   const [tasks, setTasks] = useState<Task[]>([])
   const [isRunning, setIsRunning] = useState(false)
@@ -295,7 +295,7 @@ export function BookingPage({ selectedVenue, taskId, onBack, onPageModeChange }:
 
       toast({
         title: "Monitor started",
-        description: `We'll email ${form.notificationContact} if a table opens. You can close this tab.`,
+        description: `We'll email ${form.notificationContact} if a table opens. You can close this tab. Check your spam folder if you don't see it.`,
       })
       window.dispatchEvent(new Event(MONITORS_CHANGED_EVENT))
       onBack()
@@ -563,12 +563,7 @@ export function BookingPage({ selectedVenue, taskId, onBack, onPageModeChange }:
     }
   }
 
-  const handlePageModeChange = (mode: PageMode) => {
-    setPageMode(mode)
-    if (onPageModeChange) {
-      onPageModeChange(mode)
-    }
-  }
+  const handlePageModeChange = onPageModeChange
 
   return (
     <div className="flex-1 overflow-y-auto p-4 min-h-0 bg-white dark:bg-gray-900">
@@ -806,6 +801,11 @@ export function BookingPage({ selectedVenue, taskId, onBack, onPageModeChange }:
                     className="mt-1 border-blue-600 focus:ring-blue-600"
                     required
                   />
+                  {form.notificationMethod === "email" && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Alerts come from alerts@mail.joshuabeyer.xyz and may land in spam. Mark it "not spam" so you don't miss one.
+                    </p>
+                  )}
                 </div>
               </>
             )}
